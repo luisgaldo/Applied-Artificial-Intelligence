@@ -13,13 +13,38 @@ public class Main {
 		}
 		
 		displayBoard();
-		
+
 		place("W", "D4");
 		place("B", "D5");
 		place("B", "E4");
 		place("W", "E5");
 		
 		displayBoard();
+		
+	}
+	
+	private static int[] positionToNum(String position) {
+		int [] positionArray = { position.charAt(0) - 'A', position.charAt(1) - 49}; 
+		return  positionArray;
+	}
+
+	private static void place(String team, int[] position) {
+		int color;
+		switch(team) {
+			case "B":
+				color = 1;
+				break;
+				
+			case "W":
+				color = 2;
+				break;
+				
+			default:
+				System.out.println("Invalid Team");
+				return;
+		}
+		
+		boardArray[position[0]][position[1]] = color;	
 	}
 	
 	private static void place(String team, String position) {
@@ -38,11 +63,7 @@ public class Main {
 				return;
 		}
 		
-		int col = position.charAt(0) - 'A';
-		int row = position.charAt(1) - 49;
-		
-		boardArray[row][col] = color;
-		
+		boardArray[positionToNum(position)[0]][positionToNum(position)[1]] = color;	
 	}
 
 	private static void displayBoard() {
