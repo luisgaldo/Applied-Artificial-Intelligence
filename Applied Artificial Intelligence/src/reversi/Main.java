@@ -14,13 +14,17 @@ public class Main {
 		}
 		
 		displayBoard();
-
+		
 		place('W', "D4");
 		place('B', "D5");
 		place('B', "E4");
 		place('W', "E5");
 		
 		displayBoard();
+		
+		possibleMoves('B');
+		displayBoard();
+		searchInDirection(5,2,0,2);
 	}
 	
 	
@@ -48,9 +52,113 @@ public class Main {
 	}
 	*/
 	
+	private static void possibleMoves(char color) {
+		int opponent = opponentPlayer(color);
+		
+		for (int i=0; i<size; i++) {
+			for (int j=0; j<size; j++) {
+				if (boardArray[i][j] == 0) {
+					// generate adjacent tiles and look for opponent piece
+					int[][] adjacent = adjacentTiles(i,j);
+					for (int k=0; k<8; k++) {
+						int adjRow = adjacent[k][0];
+						int adjCol = adjacent[k][1];
+						// check if it is still within the board
+						if (adjRow > 0 && adjRow < 8 && adjCol > 0 && adjCol < 8) {
+							if (boardArray[adjRow][adjCol] == opponent) {
+								boardArray[i][j] = 3;
+								System.out.println(numToPosition(i,j) + " is adjacent to W");
+							}
+						}
+						
+					}
+				}
+			}
+		}
+	}
+	
+	private static int[][] adjacentTiles(int row, int col) {
+		int[][] adj = new int[8][2];
+		
+		int[] N = 	{ row-1, col };
+		int[] NE = 	{ row-1, col+1 };
+		int[] E = 	{ row, col+1 };
+		int[] SE = 	{ row+1, col+1 };
+		int[] S = 	{ row+1, col };
+		int[] SW = 	{ row+1, col-1 };
+		int[] W = 	{ row, col-1 };
+		int[] NW = 	{ row-1, col-1 };
+		
+		adj[0] = N;
+		adj[1] = NE;
+		adj[2] = E;
+		adj[3] = SE;
+		adj[4] = S;
+		adj[5] = SW;
+		adj[6] = W;
+		adj[7] = NW;
+		
+		return adj;
+	}
+	
+	// assuming clockwise N, NE, E, SE, S, SW, W, NW
+	private static boolean searchInDirection(int row, int col, int direction, int player) {
+		switch (direction) {
+		case 0:
+			for (int i=row; i>=0; i--) {
+				System.out.println("Looking at " + numToPosition(i,col));
+				if (boardArray[i][col] == player) {
+					System.out.println("Found at " + numToPosition(i,col));
+					return true;
+				}
+			}
+			break;
+			
+		case 1:
+			
+			break;
+		}
+		
+		System.out.println("Not Found!");
+		return false;
+	}
+	
+	/*
+	 * Return row by col no matter the input
+	 * Always regard Alphabet as column and number as row regardless of the order
+	 */
 	private static int[] positionToNum(String position) {
-		int [] positionArray = { position.charAt(0) - 'A', position.charAt(1) - 49}; 
+		char c1 = position.charAt(0);
+		char c2 = position.charAt(1);
+		int row = -1, col = -1;
+		
+		if (Character.isDigit(c1) && Character.isLetter(c2)) {
+			row = c1 - 49;
+			col = c2 - 'A';
+		} else if (Character.isLetter(c1) && Character.isDigit(c2)) {
+			row = c1 - 'A';
+			col = c2 - 49;
+		}
+		
+		// error check
+		if (row < 0 || row > 8 || col < 0 || row > 8) {
+			System.out.println("Invalid position");
+		}
+		
+		int [] positionArray = { row, col }; 
 		return  positionArray;
+	}
+	
+	private static String numToPosition(int row, int col) {
+		String position = "Invalid Coord";
+		
+		if (row >= 0 && row < 8 && col >= 0 && col < 8) {
+			col += 65;
+	        char letter = (char) col;
+	        position = letter + Integer.toString(row+1);
+		}
+		
+		return position;
 	}
 	
 	private static int colorToPlayer(char color) {
