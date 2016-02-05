@@ -1,6 +1,5 @@
 package reversi;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
@@ -24,7 +23,10 @@ public class Main {
 		
 		possibleMoves('B');
 		displayBoard();
-		searchInDirection(5,2,0,2);
+		
+		System.out.println("===========================");
+		System.out.println("      Current turn: B      ");
+		System.out.println("===========================");
 	}
 	
 	
@@ -54,6 +56,7 @@ public class Main {
 	
 	private static void possibleMoves(char color) {
 		int opponent = opponentPlayer(color);
+		int player = colorToPlayer(color);
 		
 		for (int i=0; i<size; i++) {
 			for (int j=0; j<size; j++) {
@@ -66,8 +69,10 @@ public class Main {
 						// check if it is still within the board
 						if (adjRow > 0 && adjRow < 8 && adjCol > 0 && adjCol < 8) {
 							if (boardArray[adjRow][adjCol] == opponent) {
-								boardArray[i][j] = 3;
-								System.out.println(numToPosition(i,j) + " is adjacent to W");
+								// search for the player tile in the same direction and mark if found
+								if (searchInDirection(i,j,k,player)) {
+									boardArray[i][j] = 3;
+								}
 							}
 						}
 						
@@ -103,23 +108,83 @@ public class Main {
 	
 	// assuming clockwise N, NE, E, SE, S, SW, W, NW
 	private static boolean searchInDirection(int row, int col, int direction, int player) {
+		int i;
 		switch (direction) {
 		case 0:
-			for (int i=row; i>=0; i--) {
-				System.out.println("Looking at " + numToPosition(i,col));
+			for (i=row; i>=0; i--) {
 				if (boardArray[i][col] == player) {
-					System.out.println("Found at " + numToPosition(i,col));
 					return true;
 				}
 			}
 			break;
 			
 		case 1:
-			
+			i = 0;
+			while (row-i >= 0 && col+i < 8) {
+				if (boardArray[row-i][col+i] == player) {
+					return true;
+				}
+				i++;
+			}
 			break;
+			
+		case 2:
+			for (i=col; i<8; i++) {
+				if (boardArray[row][i] == player) {
+					return true;
+				}
+			}
+			break;
+			
+		case 3:
+			i = 0;
+			while (row+i < 8 && col+i < 8) {
+				if (boardArray[row+i][col+i] == player) {
+					return true;
+				}
+				i++;
+			}
+			break;
+			
+		case 4:
+			for (i=row; i<8; i++) {
+				if (boardArray[i][col] == player) {
+					return true;
+				}
+			}
+			break;
+			
+		case 5:
+			i = 0;
+			while (row+i < 8 && col-i >= 0) {
+				if (boardArray[row+i][col-i] == player) {
+					return true;
+				}
+				i++;
+			}
+			break;
+			
+		case 6:
+			for (i=col; i>=0; i--) {
+				if (boardArray[row][i] == player) {
+					return true;
+				}
+			}
+			break;
+			
+		case 7:
+			i = 0;
+			while (row-i >= 0 && col-i >= 0) {
+				if (boardArray[row-i][col-i] == player) {
+					return true;
+				}
+				i++;
+			}
+			break;
+			
+		default: break;
 		}
-		
-		System.out.println("Not Found!");
+
 		return false;
 	}
 	
