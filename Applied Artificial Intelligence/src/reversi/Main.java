@@ -12,7 +12,6 @@ public class Main {
 		for (int i=0; i<size; i++) {
 			Arrays.fill(boardArray[i], 0);
 		}
-		displayBoard();
 		
 		place('W', "D4");
 		place('B', "D5");
@@ -21,16 +20,15 @@ public class Main {
 		
 		displayBoard();
 		
-		
-		displayPossibleMoves('B');
-		
 		System.out.println("===========================");
 		System.out.println("      Current turn: B      ");
 		System.out.println("===========================");
 		System.out.println();
 		
+		displayPossibleMoves('B');
 		
-		System.out.println("Move: C4, points: " + play('B',"C4"));
+		System.out.println("=== Move: C4, points: " + play('B',"C4") + " ===");
+		System.out.println();
 		displayBoard();
 		
 		System.out.println("===========================");
@@ -39,6 +37,10 @@ public class Main {
 		System.out.println();
 		
 		displayPossibleMoves('W');
+		
+		System.out.println("=== Move: C4, points: " + play('W',"C5") + " ===");
+		System.out.println();
+		displayBoard();
 		
 	}
 	
@@ -121,6 +123,9 @@ public class Main {
 		return adj;
 	}
 	
+	/*
+	 * There is a bug for the convertPieces for now, incorrectly convert pieces that are not linked
+	 */
 	// assuming clockwise N, NE, E, SE, S, SW, W, NW
 		private static int convertPieces(int row, int col, int direction, int player) {
 			int i;
