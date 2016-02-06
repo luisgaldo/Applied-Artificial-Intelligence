@@ -1,5 +1,6 @@
 package reversi;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
@@ -11,7 +12,6 @@ public class Main {
 		for (int i=0; i<size; i++) {
 			Arrays.fill(boardArray[i], 0);
 		}
-		
 		displayBoard();
 		
 		place('W', "D4");
@@ -21,40 +21,52 @@ public class Main {
 		
 		displayBoard();
 		
-		possibleMoves('B');
-		displayBoard();
+		
+		displayPossibleMoves('B');
 		
 		System.out.println("===========================");
 		System.out.println("      Current turn: B      ");
 		System.out.println("===========================");
+		System.out.println();
+		
+		
+		System.out.println("Move: C4, points: " + play('B',"C4"));
+		displayBoard();
+		
+		System.out.println("===========================");
+		System.out.println("      Current turn: W      ");
+		System.out.println("===========================");
+		System.out.println();
+		
+		displayPossibleMoves('W');
+		
 	}
 	
-	
-	// change to scan method ( if 0 then look at the row, column then diagonal )
-	/*
-	private static void possibleMoves(char color) {
-		int player = colorToPlayer(color);
+	private static int play(char color, String position) {
 		int opponent = opponentPlayer(color);
-		ArrayList<int[]> possibleMoves = new ArrayList<int[]>();
-		for (int i=0; i<size; i++) {
-			for (int j=0; j<size; j++) {
-				if (boardArray[i][j] == opponent) {
-					for (int k=j; k<size; k++) { // look for any of player tile in the same row
-						if (boardArray[i][k] == player) {
-							int[] move = {i,j-1};
-							possibleMoves.add(move);
-						}
-					}
+		int player = colorToPlayer(color);
+		int[] coord = positionToNum(position);
+		int row = coord[0];
+		int col = coord[1];
+		int points = 0;
+		
+		boardArray[row][col] = player;
+		int[][] adjacent = adjacentTiles(row, col);
+		for (int k=0; k<8; k++) {
+			int adjRow = adjacent[k][0];
+			int adjCol = adjacent[k][1];
+			// check if it is still within the board
+			if (adjRow > 0 && adjRow < 8 && adjCol > 0 && adjCol < 8) {
+				if (boardArray[adjRow][adjCol] == opponent) {
+					points += convertPieces(row, col, k, player);
 				}
 			}
-		}
-		for (int[] moves: possibleMoves) {
-			System.out.println(moves[0] + ", " + moves[1]);
-		}
+		}	
+		return points;
 	}
-	*/
-	
-	private static void possibleMoves(char color) {
+
+	private static ArrayList<int[]> possibleMoves(char color) {
+		ArrayList<int[]> possibleMoves = new ArrayList<int[]>();
 		int opponent = opponentPlayer(color);
 		int player = colorToPlayer(color);
 		
@@ -62,7 +74,7 @@ public class Main {
 			for (int j=0; j<size; j++) {
 				if (boardArray[i][j] == 0) {
 					// generate adjacent tiles and look for opponent piece
-					int[][] adjacent = adjacentTiles(i,j);
+					int[][] adjacent = adjacentTiles(i, j);
 					for (int k=0; k<8; k++) {
 						int adjRow = adjacent[k][0];
 						int adjCol = adjacent[k][1];
@@ -70,16 +82,19 @@ public class Main {
 						if (adjRow > 0 && adjRow < 8 && adjCol > 0 && adjCol < 8) {
 							if (boardArray[adjRow][adjCol] == opponent) {
 								// search for the player tile in the same direction and mark if found
-								if (searchInDirection(i,j,k,player)) {
-									boardArray[i][j] = 3;
+								int[] search = searchInDirection(i, j, k, player);
+								if (search[0] != -1 && search[1] != -1) {
+									int[] move = { i, j };
+									possibleMoves.add(move);
 								}
 							}
 						}
-						
 					}
 				}
 			}
 		}
+		
+		return possibleMoves;
 	}
 	
 	private static int[][] adjacentTiles(int row, int col) {
@@ -107,13 +122,98 @@ public class Main {
 	}
 	
 	// assuming clockwise N, NE, E, SE, S, SW, W, NW
-	private static boolean searchInDirection(int row, int col, int direction, int player) {
+		private static int convertPieces(int row, int col, int direction, int player) {
+			int i;
+			int converted = 0;
+			switch (direction) {
+			case 0:
+				i = ++row;
+				while (i >= 0 && boardArray[i][col] != player && boardArray[i][col] != 0) {
+					boardArray[i][col] = player;
+					converted++;
+					i--;
+				}
+				break;
+				
+			case 1:
+				i = 1;
+				while (row-i >= 0 && col+i < 8 && boardArray[row-i][col+i] != player && boardArray[row-i][col+i] != 0) {
+					boardArray[row-i][col+i] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			case 2:
+				i = ++col;
+				while (i < 8 && boardArray[row][i] != player && boardArray[row][i] != 0) {
+					boardArray[row][i] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			case 3:
+				i = 1;
+				while (row+i < 8 && col+i < 8 && boardArray[row+i][col+i] != player && boardArray[row+i][col+i] != 0) {
+					boardArray[row+i][col+i] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			case 4:
+				i = ++row;
+				while (i < 8 && boardArray[i][col] != player && boardArray[i][col] != 0) {
+					boardArray[i][col] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			case 5:
+				i = 1;
+				while (row+i < 8 && col-i >= 0 && boardArray[row+i][col-i] != player) {
+					boardArray[row+i][col-i] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			case 6:
+				i = ++col;
+				while (i >= 0 && boardArray[row][i] != player && boardArray[row][i] != 0) {
+					boardArray[row][i] = player;
+					converted++;
+					i--;
+				}
+				break;
+				
+			case 7:
+				i = 1;
+				while (row-i >= 0 && col-i >= 0 && boardArray[row-i][col-i] != player && boardArray[row-i][col-i] != 0) {
+					boardArray[row-i][col-i] = player;
+					converted++;
+					i++;
+				}
+				break;
+				
+			default: break;
+			}
+			return converted;
+		}
+	
+	// assuming clockwise N, NE, E, SE, S, SW, W, NW
+	private static int[] searchInDirection(int row, int col, int direction, int player) {
+		int[] coord = { -1, -1 };
 		int i;
 		switch (direction) {
 		case 0:
 			for (i=row; i>=0; i--) {
 				if (boardArray[i][col] == player) {
-					return true;
+					coord[0] = i;
+					coord[1] = col;
+					return coord;
 				}
 			}
 			break;
@@ -122,7 +222,9 @@ public class Main {
 			i = 0;
 			while (row-i >= 0 && col+i < 8) {
 				if (boardArray[row-i][col+i] == player) {
-					return true;
+					coord[0] = row-i;
+					coord[1] = col+i;
+					return coord;
 				}
 				i++;
 			}
@@ -131,7 +233,9 @@ public class Main {
 		case 2:
 			for (i=col; i<8; i++) {
 				if (boardArray[row][i] == player) {
-					return true;
+					coord[0] = row;
+					coord[1] = i;
+					return coord;
 				}
 			}
 			break;
@@ -140,7 +244,9 @@ public class Main {
 			i = 0;
 			while (row+i < 8 && col+i < 8) {
 				if (boardArray[row+i][col+i] == player) {
-					return true;
+					coord[0] = row+i;
+					coord[1] = col+i;
+					return coord;
 				}
 				i++;
 			}
@@ -149,7 +255,9 @@ public class Main {
 		case 4:
 			for (i=row; i<8; i++) {
 				if (boardArray[i][col] == player) {
-					return true;
+					coord[0] = i;
+					coord[1] = col;
+					return coord;
 				}
 			}
 			break;
@@ -158,7 +266,9 @@ public class Main {
 			i = 0;
 			while (row+i < 8 && col-i >= 0) {
 				if (boardArray[row+i][col-i] == player) {
-					return true;
+					coord[0] = row+i;
+					coord[1] = col-i;
+					return coord;
 				}
 				i++;
 			}
@@ -167,7 +277,9 @@ public class Main {
 		case 6:
 			for (i=col; i>=0; i--) {
 				if (boardArray[row][i] == player) {
-					return true;
+					coord[0] = row;
+					coord[1] = i;
+					return coord;
 				}
 			}
 			break;
@@ -176,7 +288,9 @@ public class Main {
 			i = 0;
 			while (row-i >= 0 && col-i >= 0) {
 				if (boardArray[row-i][col-i] == player) {
-					return true;
+					coord[0] = row-i;
+					coord[1] = col-i;
+					return coord;
 				}
 				i++;
 			}
@@ -185,7 +299,7 @@ public class Main {
 		default: break;
 		}
 
-		return false;
+		return coord;
 	}
 	
 	/*
@@ -210,7 +324,7 @@ public class Main {
 			System.out.println("Invalid position");
 		}
 		
-		int [] positionArray = { row, col }; 
+		int [] positionArray = { col, row }; 
 		return  positionArray;
 	}
 	
@@ -263,7 +377,57 @@ public class Main {
 	// should change back to row by column (easier to avoid mistakes when working with 2d array)
 	private static void place(char color, String position) {
 		int player = colorToPlayer(color);
-		boardArray[positionToNum(position)[0]][positionToNum(position)[1]] = player;	
+		int[] coord = positionToNum(position); 
+		boardArray[coord[0]][coord[1]] = player;	
+	}
+	
+	private static void displayPossibleMoves(char color) {
+		ArrayList<int[]> possibleMoves = possibleMoves(color);
+		
+		// create a deep-copy so it doesn't affect the actual board
+        final int[][] UIboardArray = new int[size][];
+        for (int i = 0; i < size; i++) {
+        	UIboardArray[i] = Arrays.copyOf(boardArray[i], size);
+        }
+        
+		for (int[] coord: possibleMoves) {
+			UIboardArray[coord[0]][coord[1]] = 3;
+		}
+		displayBoard(UIboardArray);
+	}
+	
+	private static void displayBoard(int[][] board) {
+		System.out.print("   ");
+		for (int i=1; i<=8; i++) {
+			System.out.print(" " + String.valueOf((char)(i + 64)) + " ");
+		}
+		System.out.println();
+		
+		for (int i=0; i<size; i++) {
+			System.out.print(" " + (i+1) + " ");
+			for (int j=0; j<size; j++) {
+				switch(board[i][j]) {
+					case 1:
+						System.out.print(" B ");
+						break;
+						
+					case 2:
+						System.out.print(" W ");
+						break;
+						
+					case 3:
+						System.out.print(" X ");
+						break;
+					
+					case 0:
+					default:
+						System.out.print(" - ");
+						break;
+				}
+			}
+			System.out.println();
+		}
+		System.out.println();
 	}
 
 	private static void displayBoard() {
