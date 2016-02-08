@@ -2,10 +2,14 @@ package reversi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Main {
 	public static int size = 8;
 	public static int[][] boardArray = new int[size][size];
+	public static char currentColor = 'B';
+	public static int bPoints = 2, wPoints = 2;
+	public static int currentTurn = 1;
 
 	public static void main(String[] args) {
 		// initialize new board
@@ -20,28 +24,55 @@ public class Main {
 		
 		displayBoard();
 		
+		while (bPoints + wPoints < 64) {
+			displayCurrentTurn();
+			requestMove();	
+		}
+		
+		System.out.println("Game Over!");
+	}
+	
+	private static void requestMove() {
+		int points = 0;
+		Scanner sc = new Scanner( System.in );		
+		ArrayList<String> possibleMovesPosition = possibleMovesCoordToPosition(possibleMovesCoord(currentColor));
+		
+		if (possibleMovesPosition.size() < 1) {
+			System.out.print(currentColor + " Move: SKIP");
+		} else {
+			System.out.print(currentColor + " Move: ");
+			String position = sc.nextLine();
+			
+			while (!possibleMovesPosition.contains(position)) {
+				System.out.println("Invalid move!");
+				System.out.print(currentColor + " Move: ");
+				position = sc.nextLine();
+			}
+			points = play(currentColor, position);
+			place(currentColor, position);
+		}
+		
+		System.out.println();
+		
+		if (currentColor == 'B') {
+			bPoints += points + 1;
+			wPoints -= points;
+			currentColor = 'W';
+		} else {
+			wPoints += points + 1;
+			bPoints -= points;
+			currentColor = 'B';
+		}
+	}
+	
+	private static void displayCurrentTurn() {
 		System.out.println("===========================");
-		System.out.println("      Current turn: B      ");
+		System.out.println("        Turn " + currentTurn + ": " + currentColor + "     ");
+		System.out.println("   Score B: " + bPoints + "    W: " + wPoints);
 		System.out.println("===========================");
 		System.out.println();
 		
-		displayPossibleMoves('B');
-		
-		System.out.println("=== Move: C4, points: " + play('B',"C4") + " ===");
-		System.out.println();
-		displayBoard();
-		
-		System.out.println("===========================");
-		System.out.println("      Current turn: W      ");
-		System.out.println("===========================");
-		System.out.println();
-		
-		displayPossibleMoves('W');
-		
-		System.out.println("=== Move: C4, points: " + play('W',"C5") + " ===");
-		System.out.println();
-		displayBoard();
-		
+		displaypossibleMovesCoord(currentColor);
 	}
 	
 	private static int play(char color, String position) {
@@ -52,7 +83,6 @@ public class Main {
 		int col = coord[1];
 		int points = 0;
 		
-		boardArray[row][col] = player;
 		int[][] adjacent = adjacentTiles(row, col);
 		for (int k=0; k<8; k++) {
 			int adjRow = adjacent[k][0];
@@ -60,15 +90,21 @@ public class Main {
 			// check if it is still within the board
 			if (adjRow > 0 && adjRow < 8 && adjCol > 0 && adjCol < 8) {
 				if (boardArray[adjRow][adjCol] == opponent) {
-					points += convertPieces(row, col, k, player);
+					// search for the player tile in the same direction and mark if found
+					int[] search = searchInDirection(row, col, k, player);
+					if (search[0] != -1 && search[1] != -1) {
+						points += convertPieces(row, col, k, player);
+					}
 				}
 			}
 		}	
+		System.out.println("Points: " + points);
+		currentTurn++;
 		return points;
 	}
 
-	private static ArrayList<int[]> possibleMoves(char color) {
-		ArrayList<int[]> possibleMoves = new ArrayList<int[]>();
+	private static ArrayList<int[]> possibleMovesCoord(char color) {
+		ArrayList<int[]> possibleMovesCoord = new ArrayList<int[]>();
 		int opponent = opponentPlayer(color);
 		int player = colorToPlayer(color);
 		
@@ -87,7 +123,7 @@ public class Main {
 								int[] search = searchInDirection(i, j, k, player);
 								if (search[0] != -1 && search[1] != -1) {
 									int[] move = { i, j };
-									possibleMoves.add(move);
+									possibleMovesCoord.add(move);
 								}
 							}
 						}
@@ -96,7 +132,18 @@ public class Main {
 			}
 		}
 		
-		return possibleMoves;
+		return possibleMovesCoord;
+	}
+	
+	private static ArrayList<String> possibleMovesCoordToPosition(ArrayList<int[]> possibleMovesCoord) {
+		ArrayList<String> possiblePositions = new ArrayList<String>();
+		for (int[] coord: possibleMovesCoord) {
+			String position = numToPosition(coord[0], coord[1]);
+			if (!possiblePositions.contains(position)) {
+				possiblePositions.add(position);
+			}
+		}
+		return possiblePositions;
 	}
 	
 	private static int[][] adjacentTiles(int row, int col) {
@@ -132,7 +179,7 @@ public class Main {
 			int converted = 0;
 			switch (direction) {
 			case 0:
-				i = ++row;
+				i = --row;
 				while (i >= 0 && boardArray[i][col] != player && boardArray[i][col] != 0) {
 					boardArray[i][col] = player;
 					converted++;
@@ -186,7 +233,7 @@ public class Main {
 				break;
 				
 			case 6:
-				i = ++col;
+				i = --col;
 				while (i >= 0 && boardArray[row][i] != player && boardArray[row][i] != 0) {
 					boardArray[row][i] = player;
 					converted++;
@@ -214,7 +261,7 @@ public class Main {
 		int i;
 		switch (direction) {
 		case 0:
-			for (i=row; i>=0; i--) {
+			for (i=--row; i>=0; i--) {
 				if (boardArray[i][col] == player) {
 					coord[0] = i;
 					coord[1] = col;
@@ -224,7 +271,7 @@ public class Main {
 			break;
 			
 		case 1:
-			i = 0;
+			i = 1;
 			while (row-i >= 0 && col+i < 8) {
 				if (boardArray[row-i][col+i] == player) {
 					coord[0] = row-i;
@@ -236,7 +283,7 @@ public class Main {
 			break;
 			
 		case 2:
-			for (i=col; i<8; i++) {
+			for (i=++col; i<8; i++) {
 				if (boardArray[row][i] == player) {
 					coord[0] = row;
 					coord[1] = i;
@@ -246,7 +293,7 @@ public class Main {
 			break;
 			
 		case 3:
-			i = 0;
+			i = 1;
 			while (row+i < 8 && col+i < 8) {
 				if (boardArray[row+i][col+i] == player) {
 					coord[0] = row+i;
@@ -258,7 +305,7 @@ public class Main {
 			break;
 			
 		case 4:
-			for (i=row; i<8; i++) {
+			for (i=++row; i<8; i++) {
 				if (boardArray[i][col] == player) {
 					coord[0] = i;
 					coord[1] = col;
@@ -268,7 +315,7 @@ public class Main {
 			break;
 			
 		case 5:
-			i = 0;
+			i = 1;
 			while (row+i < 8 && col-i >= 0) {
 				if (boardArray[row+i][col-i] == player) {
 					coord[0] = row+i;
@@ -280,7 +327,7 @@ public class Main {
 			break;
 			
 		case 6:
-			for (i=col; i>=0; i--) {
+			for (i=--col; i>=0; i--) {
 				if (boardArray[row][i] == player) {
 					coord[0] = row;
 					coord[1] = i;
@@ -290,7 +337,7 @@ public class Main {
 			break;
 			
 		case 7:
-			i = 0;
+			i = 1;
 			while (row-i >= 0 && col-i >= 0) {
 				if (boardArray[row-i][col-i] == player) {
 					coord[0] = row-i;
@@ -372,22 +419,20 @@ public class Main {
 			return -1;
 		}
 	}
-
-	private static void place(char color, int[] position) {
-		int player = colorToPlayer(color);
-		boardArray[position[0]][position[1]] = player;	
-	}
 	
-	
-	// should change back to row by column (easier to avoid mistakes when working with 2d array)
-	private static void place(char color, String position) {
+	// for use with computer's "thinking" board when the board parameter is used
+	private static void place(char color, String position, int[][] board) {
 		int player = colorToPlayer(color);
 		int[] coord = positionToNum(position); 
-		boardArray[coord[0]][coord[1]] = player;	
+		board[coord[0]][coord[1]] = player;	
 	}
 	
-	private static void displayPossibleMoves(char color) {
-		ArrayList<int[]> possibleMoves = possibleMoves(color);
+	private static void place(char color, String position) {
+		place(color, position, boardArray);
+	}
+
+	private static void displaypossibleMovesCoord(char color) {
+		ArrayList<int[]> possibleMovesCoord = possibleMovesCoord(color);
 		
 		// create a deep-copy so it doesn't affect the actual board
         final int[][] UIboardArray = new int[size][];
@@ -395,10 +440,24 @@ public class Main {
         	UIboardArray[i] = Arrays.copyOf(boardArray[i], size);
         }
         
-		for (int[] coord: possibleMoves) {
+		for (int[] coord: possibleMovesCoord) {
 			UIboardArray[coord[0]][coord[1]] = 3;
 		}
+		
 		displayBoard(UIboardArray);
+		
+		System.out.print("Possible Moves: ");
+		
+		if (possibleMovesCoord.size() < 1) {
+			System.out.print("none");
+		} else {
+			for (String position: possibleMovesCoordToPosition(possibleMovesCoord)) {
+				System.out.print(position + " ");
+			}	
+		}
+		
+		System.out.println();
+		System.out.println("---------------------------");
 	}
 	
 	private static void displayBoard(int[][] board) {
@@ -467,6 +526,19 @@ public class Main {
 			System.out.println();
 		}
 		System.out.println();
+	}
+	
+	
+	// previously used, but sum of points should be faster
+	private static boolean gameEnd() {
+		for (int i=0; i<size; i++) {
+			for (int j=0; j<size; j++) {
+				if (boardArray[i][j] == 0) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 }
