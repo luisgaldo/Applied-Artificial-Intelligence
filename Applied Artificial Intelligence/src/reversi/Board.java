@@ -7,7 +7,10 @@ public class Board {
 	private int size = 8;
 	private int[][] boardArray;
 	private int currentPlayer, currentTurn;
-	private Board prevBoard; 
+	private Board prevBoard;
+	private int[] prevMove;
+	public boolean visited = false;
+	public ArrayList<Board> children = new ArrayList<Board>();
 	
 	/*
 	 * Black = 1, White = 2
@@ -18,15 +21,13 @@ public class Board {
 		for (int i=0; i<size; i++) {
 			Arrays.fill(boardArray[i], 0);
 		}
-		
-		currentTurn = 1;
-		currentPlayer = 1;
 	}
 	
-	public Board(int[][] boardArray, int currentPlayer, int currentTurn, Board prevBoard) {
+	public Board(int[][] boardArray, int currentPlayer, int currentTurn, int[] prevMove, Board prevBoard) {
 		this.boardArray = boardArray;
 		this.currentPlayer = currentPlayer;
 		this.currentTurn = currentTurn;
+		this.prevMove = prevMove;
 		this.prevBoard = prevBoard;
 	}
 	
@@ -44,6 +45,32 @@ public class Board {
 		place(1, E4);
 		place(2, E5);
 	}
+	
+	public ArrayList<Board> getChildren() {
+		if (children.isEmpty()) {
+			for (int[] coord: possibleMoves()) {
+				children.add(move(coord));
+			}	
+		}
+		return children;
+	}
+	
+	public Board getUnvistedChild() {
+		for (Board child: children) {
+			if (!child.visited) {
+				return child;
+			}
+		}
+		
+		return null;
+	}
+	
+	public void clearVisited() {
+		this.visited = false;
+		for (Board child: children) {
+			child.visited = false;
+		}
+	}
 
 	public int currentPlayer() {
 		return currentPlayer;
@@ -55,6 +82,10 @@ public class Board {
 	
 	public Board prevBoard() {
 		return prevBoard;
+	}
+	
+	public int[] prevMove() {
+		return prevMove;
 	}
 	
 	public int bPoints() {
@@ -177,8 +208,13 @@ public class Board {
 			}
 		}	
 		
-		Board newBoard = new Board(newBoardArray, opponent(), currentTurn+1, this);
-		return newBoard;
+		Board newBoard = new Board(newBoardArray, opponent(), currentTurn+1, coord, this);
+		if (newBoard.possibleMoves().isEmpty()) {
+			Board nextBoard = new Board(newBoardArray, currentPlayer, currentTurn+2, null, newBoard);
+			return nextBoard;
+		} else {
+			return newBoard;	
+		}
 	}
 	
 	public void displayPossibleMoves() {
@@ -210,7 +246,9 @@ public class Board {
 								int[] search = searchInDirection(i, j, k, currentPlayer);
 								if (search[0] != -1 && search[1] != -1) {
 									int[] move = { i, j };
-									moves.add(move);
+									if (!moves.contains(move)) {
+										moves.add(move);	
+									}
 								}
 							}
 						}
@@ -440,6 +478,18 @@ public class Board {
 			System.out.println();
 		}
 		System.out.println();
+	}
+	
+	public boolean gameEnd() {
+		for (int i=0; i<size; i++) {
+			for (int j=0; j<size; j++) {
+				if (boardArray[i][j] == 0) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
 	}
 
 }

@@ -1,6 +1,10 @@
 package reversi;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Scanner;
 
 public class Main {
@@ -10,11 +14,17 @@ public class Main {
 		mainBoard.newGame();
 		mainBoard.displayBoard();
 		
-		while (mainBoard.bPoints() + mainBoard.wPoints() < 64) {
+		while (!mainBoard.gameEnd()) {
 			displayCurrentTurn();
-			mainBoard = mainBoard.move(requestMove());	
+			if (mainBoard.currentPlayer() == 1) {
+				mainBoard = mainBoard.move(requestMove());
+			} else {
+				botPlay(mainBoard, 5);
+				Scanner sc = new Scanner( System.in );
+				sc.nextLine();
+			}
+				
 		}
-		
 		
 		/*
 		int[] C4 = { 3, 2 };
@@ -116,6 +126,157 @@ public class Main {
 	}
 	*/
 	
+	private static void botPlay(Board board, int turns) {
+		Queue<Board> queue = new LinkedList<Board>();
+		ArrayList<Board> targetBoards = new ArrayList<Board>();
+		Board bestBoard = null;
+		board.visited = true;
+		queue.add(board);
+		int targetTurn = board.currentTurn() + turns;
+		
+		while(!queue.isEmpty()) {
+			Board newBoard = queue.remove();
+			newBoard.getChildren();
+			Board child = newBoard.getUnvistedChild();
+			while(child != null && child.currentTurn() <= targetTurn) {
+				child.visited = true;
+				//System.out.print("Turn: " + child.currentTurn() + " move made: " + coordToPosition(child.prevBoard().prevMove()) + " > " + coordToPosition(child.prevMove()));
+				queue.add(child);
+				
+				if (child.currentTurn() == targetTurn) {
+					targetBoards.add(child);
+					
+					/*
+					// find best scenario
+					if (bestBoard == null) {
+						bestBoard = child;
+					}
+					
+					if (board.currentPlayer() == 1) {
+						if (bestBoard.bPoints() < child.bPoints()) {
+							bestBoard = child;	
+						}
+					} else {
+						if (bestBoard.wPoints() < child.wPoints()) {
+							bestBoard = child;	
+						}
+					}
+					*/
+				}
+				
+				child = newBoard.getUnvistedChild();
+			}
+		}
+		
+		
+		ArrayList<Board> possibleBoards = board.getChildren();
+		HashMap hm = new HashMap();
+		
+		for (Board tmpBoard: possibleBoards) {
+			ArrayList<int[]> scoreArray = new ArrayList<int[]>();
+			hm.put(coordToPosition(tmpBoard.prevMove()), scoreArray);
+		}
+
+	      
+		for (Board endBoard: targetBoards) {
+			Board tmpBoard = endBoard;
+			while (!possibleBoards.contains(tmpBoard.prevBoard())) {
+				tmpBoard = tmpBoard.prevBoard();
+			}
+			
+			tmpBoard = tmpBoard.prevBoard();
+			int[] score = { endBoard.bPoints(), endBoard.wPoints() };
+			ArrayList<int[]> scoreArray = (ArrayList<int[]>) hm.get(coordToPosition(tmpBoard.prevMove()));
+			scoreArray.add(score);
+			hm.put(coordToPosition(tmpBoard.prevMove()), scoreArray);
+		}
+		
+		for (Board tmpBoard: possibleBoards) {
+			ArrayList<int[]> scoreArray = (ArrayList<int[]>) hm.get(coordToPosition(tmpBoard.prevMove()));
+			System.out.print(coordToPosition(tmpBoard.prevMove()));
+			
+			int totalB = 0, totalW = 0;
+			for (int[] score: scoreArray) {
+				totalB += score[0];
+				totalW += score[1];
+				//System.out.println("B: " + score[0] + " W: " + score[1]);
+			}
+			
+			double weightedB = (double)totalB/scoreArray.size();
+			double weightedW = (double)totalW/scoreArray.size();
+			
+			// higher ratio means more black points, black is winning
+			double ratio = weightedB/weightedW;
+			
+			//System.out.println(" totalB: " + totalB + " totalW: " + totalW);
+			//System.out.println("weightedB: " + weightedB + " weightedW: " + weightedW);
+			System.out.println(" ratio: " + ratio);
+			
+		}
+		System.out.println("There are " + targetBoards.size() + " possibilities");
+		
+		/*
+		for (int i=0; i<board.getChildren().size(); i++) {
+			
+		}
+		
+		for (Board possibleBoard: board.getChildren()) {
+			System.out.println("Move: " + coordToPosition(possibleBoard.prevMove()));
+		}
+		
+		System.out.println("There are " + targetBoards.size() + " possibilities");
+		*/
+		/*
+		System.out.println("===========================");
+		System.out.println("======Potential Moves======");
+		System.out.println();
+		while (bestBoard.currentTurn() > board.currentTurn()) {
+			bestBoard.displayBoard();
+			bestBoard = bestBoard.prevBoard();
+		}
+		
+		System.out.println("======End of thinking======");
+		System.out.println("===========================");
+		
+		System.out.println("Best possible move: " + coordToPosition(bestBoard.prevMove()));
+		*/
+		
+		/*
+		for (Board tmpBoard: targetBoards) {
+			Board tmp = tmpBoard;
+			while (tmp.currentTurn() >= currentTurn) {
+				System.out.print(coordToPosition(tmp.prevMove()) + " < ");
+				tmp = tmp.prevBoard();
+			}
+			System.out.println();
+		}
+		*/
+		board.clearVisited();
+	}
+	
+	/*
+	private static void botPlay() {
+		Queue<Board> queue = new LinkedList<Board>();
+		queue.add(mainBoard);
+		System.out.println("Turn: " + mainBoard.currentTurn());
+		mainBoard.visited = true;
+		while(!queue.isEmpty()) {
+			Board board = queue.remove();
+			board.getChildren();
+			Board child = null;
+			while((child=board.getUnvistedChild())!=null) {
+				child.visited=true;
+				System.out.println("Turn: " + child.currentTurn() + " Move:" + coordToPosition(child.prevMove()) + " of possibleMoves" + child.possibleMoves().size());
+				child.getChildren();
+				queue.add(child);
+			}
+		}
+		// Clear visited property of nodes
+		mainBoard.clearVisited();
+	}
+	*/
+
+	
 	private static int[] requestMove() {
 		Scanner sc = new Scanner( System.in );
 		char currentColor = playerToColor(mainBoard.currentPlayer());
@@ -155,7 +316,7 @@ public class Main {
 		
 		System.out.println("===========================");
 		System.out.println("        Turn " + mainBoard.currentTurn() + ": " + currentColor + "     ");
-		System.out.println("   Score B: " + mainBoard.bPoints() + "    W: " + mainBoard.wPoints());
+		System.out.println("   Score  B: " + mainBoard.bPoints() + "    W: " + mainBoard.wPoints());
 		System.out.println("===========================");
 		System.out.println();
 		
