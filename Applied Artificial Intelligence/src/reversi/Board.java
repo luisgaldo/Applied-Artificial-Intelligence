@@ -115,7 +115,6 @@ public class Board {
 	}
 	
 	public Board move(int[] coord) {
-		int nextPlayer;
 		int row = coord[0];
 		int col = coord[1];
 		int opponent = opponent();
@@ -210,7 +209,8 @@ public class Board {
 		
 		Board newBoard = new Board(newBoardArray, opponent(), currentTurn+1, coord, this);
 		if (newBoard.possibleMoves().isEmpty()) {
-			Board nextBoard = new Board(newBoardArray, currentPlayer, currentTurn+2, null, newBoard);
+			//System.out.println("============SKIP===========");
+			Board nextBoard = new Board(newBoardArray, currentPlayer, currentTurn+1, coord, this);
 			return nextBoard;
 		} else {
 			return newBoard;	
