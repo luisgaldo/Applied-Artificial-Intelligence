@@ -6,11 +6,13 @@ import java.util.Arrays;
 public class Board {
 	private int size = 8;
 	private int[][] boardArray;
-	private int currentPlayer, currentTurn;
-	private Board prevBoard;
-	private int[] prevMove;
+	private int currentPlayer = 1, currentTurn = 1;
+	private Board prevBoard = null;
+	private int[] prevMove = null;
 	public boolean visited = false;
 	public ArrayList<Board> children = new ArrayList<Board>();
+	public boolean positiveInfinity = false;
+	public boolean negativeInfinity = false;
 	
 	/*
 	 * Black = 1, White = 2
@@ -44,6 +46,13 @@ public class Board {
 		place(1, D5);
 		place(1, E4);
 		place(2, E5);
+	}
+	
+	public boolean hasChildren() {
+		if (children.isEmpty()) {
+			return false;
+		}
+		return true;
 	}
 	
 	public ArrayList<Board> getChildren() {
@@ -89,6 +98,11 @@ public class Board {
 	}
 	
 	public int bPoints() {
+		if (positiveInfinity) {
+			return size*size + 1;
+		} else if (negativeInfinity) {
+			return -1;
+		}
 		int bPoints = 0;
 		for (int i=0; i<size; i++) {
 			for (int j=0; j<size; j++) {
@@ -102,6 +116,11 @@ public class Board {
 	}
 	
 	public int wPoints() {
+		if (positiveInfinity) {
+			return size*size + 1;
+		} else if (negativeInfinity) {
+			return -1;
+		}
 		int wPoints = 0;
 		for (int i=0; i<size; i++) {
 			for (int j=0; j<size; j++) {
@@ -137,7 +156,7 @@ public class Board {
 						int j;
 						switch (i) {
 							case 0:
-								j = --row;
+								j = row-1;
 								while (j != targetRow) {
 									newBoardArray[j][col] = currentPlayer;
 									j--;
@@ -153,7 +172,7 @@ public class Board {
 								break;
 								
 							case 2:
-								j = ++col;
+								j = col+1;
 								while (j != targetCol) {
 									newBoardArray[row][j] = currentPlayer;
 									j++;
@@ -169,7 +188,7 @@ public class Board {
 								break;
 								
 							case 4:
-								j = ++row;
+								j = row+1;
 								while (j != targetRow) {
 									newBoardArray[j][col] = currentPlayer;
 									j++;
@@ -185,7 +204,7 @@ public class Board {
 								break;
 								
 							case 6:
-								j = --col;
+								j = col-1;
 								while (j != targetCol) {
 									newBoardArray[row][j] = currentPlayer;
 									j--;
@@ -208,15 +227,17 @@ public class Board {
 		}	
 		
 		Board newBoard = new Board(newBoardArray, opponent(), currentTurn+1, coord, this);
+		
 		if (newBoard.possibleMoves().isEmpty()) {
-			//System.out.println("============SKIP===========");
-			Board nextBoard = new Board(newBoardArray, currentPlayer, currentTurn+1, coord, this);
-			return nextBoard;
-		} else {
-			return newBoard;	
+			newBoard.switchPlayer();
 		}
+		return newBoard;
 	}
 	
+	private void switchPlayer() {
+		currentPlayer = opponent();
+	}
+
 	public void displayPossibleMoves() {
 		int[][] possibleMovesBoard = copyBoardArray();
         
@@ -297,7 +318,7 @@ public class Board {
 			break;
 			
 		case 2:
-			for (i=++col; i<8; i++) {
+			for (i=col+1; i<8; i++) {
 				if (boardArray[row][i] == 0) {
 					return coord;
 				}
@@ -327,7 +348,7 @@ public class Board {
 			break;
 			
 		case 4:
-			for (i=++row; i<8; i++) {
+			for (i=row+1; i<8; i++) {
 				if (boardArray[i][col] == 0) {
 					return coord;
 				}
@@ -357,7 +378,7 @@ public class Board {
 			break;
 			
 		case 6:
-			for (i=--col; i>=0; i--) {
+			for (i=col-1; i>=0; i--) {
 				if (boardArray[row][i] == 0) {
 					return coord;
 				}
